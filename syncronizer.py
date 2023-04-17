@@ -16,50 +16,70 @@ class SyncronizeFolders:
                         return True
                     return False
         return True
+    
+    def get_all_files(self):
+        source_files = {}
+        source_dirs = {}
+
+        replica_files = {}
+        replica_dirs = {}
+
+        for root, dirs, files in os.walk(self.source, topdown=True):
+            for name in files:
+                print(f'FILE - {root}\{name}')
+                source_files[name] = f'{root}\{name}'
+            for name in dirs:
+                print(f'DIRR - {root}\{name}')
+                source_dirs[name] = f'{root}\{name}'
+
+        for root, dirs, files in os.walk(self.replica, topdown=True):
+            for name in files:
+                replica_files[name] = f'{root}\{name}'
+            for name in dirs:
+                replica_dirs[name] = f'{root}\{name}'
+
+        return source_files, source_dirs, replica_files, replica_dirs
 
     def check_main_folders(self):
-        source_files = os.listdir(self.source)
-        replica_files = os.listdir(self.replica)
+        source_files, source_dirs, replica_files, replica_dirs = self.get_all_files()
 
-        if len(source_files) != len(replica_files):
-            return False
-        
-        for source_file in source_files:
+        for source_dir in source_dirs:
+            if not source_dir in replica_dirs:
+                return False
+
+
+        for source_file, source_root in source_files.items():
             if source_file in replica_files:
-                if not self.check_files(f'{self.source}/{source_file}', f'{self.replica}/{source_file}'):
+                if not self.check_files(source_root, replica_files[source_file]):
+                    print('52')
                     return False
             else:
+                print('56')
                 return False
         else:
             return True
 
     #Function for removing/updating/adding files if replica folder doesn't match source folder
     def syncronize(self):
-        source_files = os.listdir(self.source)
-        replica_files = os.listdir(self.replica)
+        source_files, source_dirs, replica_files, replica_dirs = self.get_all_files()
 
-        #Loop for checking if replica's files match source folder files
-        for replica_file in replica_files:
-            if replica_file in source_files:
-                if self.check_files(f'{self.source}\{replica_file}', f'{self.replica}\{replica_file}'):
-                    print('File does exist and same as source file!')
+        for source_dir_name, source_dir in source_dirs.items():
+            if source_dir_name not in replica_dirs:
+                destination_dir = source_dir.split(self.source)
+                os.system(f'xcopy \"{source_dir}\" \"{self.replica}{destination_dir[1]}\" /T /E /H /C /I')
+
+        for source_filename, source_file in source_files.items():
+            if source_filename not in replica_files:
+                destination_file = source_file.replace(source_filename, '').split(self.source)
+                os.system(f'xcopy \"{source_file}\" \"{self.replica}{destination_file[1]}\" /I /F')
+            else:
+                if self.check_files(source_file, replica_files[source_filename]):
+                    pass
                 else:
-                    os.remove(f'{self.replica}\{replica_file}')
-                    os.system(f'Xcopy \"{self.source}\{replica_file}\" \"{self.replica}\" \T /E /H /C /I')
-                    print('File was updated!')
-            if replica_file not in source_files:
-                os.remove(f'{self.replica}\{replica_file}')
-                print('File was deleted!')
-
-        #Loop for checking if source's files match replica folder files (If not, we deleting files/folders from replica folder)
-        for source_file in source_files:
-            if source_file not in replica_files:
-                if os.path.isfile(f'{self.source}\{source_file}'):
-                    print(f'xcopy \"{self.source}\{source_file}\" \"{self.replica}\"')
-                    os.system(f'xcopy \"{self.source}\{source_file}\" \"{self.replica}\"')
-                if os.path.isdir(f'{self.source}\{source_file}'):
-                    print(f'xcopy \"{self.source}\{source_file}\" \"{self.replica}\{source_file}\" /T /E /H /C /I')
-                    os.system(f'xcopy \"{self.source}\{source_file}\" \"{self.replica}\{source_file}\" /T /E /H /C /I')
+                    destination_file = source_file.replace(source_filename, '').split(self.source)
+                    os.remove(replica_files[source_filename])
+                    os.system(f'xcopy \"{source_file}\" \"{self.replica}{destination_file[1]}\" /I /F')
+                    print(f'Changed content of - {source_filename}')
 
     #Main loop
     def main(self):
@@ -68,9 +88,8 @@ class SyncronizeFolders:
                 print("Everything is fine")
                 time.sleep(5)
                 continue
-
-            self.syncronize()
-
+            else:
+                self.syncronize()
 
 
 if __name__ == "__main__":
