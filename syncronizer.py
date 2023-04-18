@@ -9,6 +9,12 @@ class SyncronizeFolders:
         self.source = source_folder
         self.replica = destination_folder
 
+    def logs(self, message):
+        now = time.strftime("%d-%m-%Y %H:%M:%S", time.localtime())
+        with open("log.txt", "a") as log_file:
+            log_file.write(f'[{now}] - {message} \n')
+        print(f'[{now}] - {message}')
+
     def check_files(self, source_file, replica_file):
         """Checking if content of both files is the same or not"""
         if os.path.isfile(source_file):
@@ -29,10 +35,8 @@ class SyncronizeFolders:
 
         for root, dirs, files in os.walk(self.source, topdown=True):
             for name in files:
-                print(f'FILE - {root}\{name}')
                 source_files[name] = f'{root}\{name}'
             for name in dirs:
-                print(f'DIRR - {root}\{name}')
                 source_dirs[name] = f'{root}\{name}'
 
         for root, dirs, files in os.walk(self.replica, topdown=True):
@@ -71,11 +75,13 @@ class SyncronizeFolders:
             if source_dir_name not in replica_dirs:
                 destination_dir = source_dir.split(self.source)
                 os.system(f'xcopy \"{source_dir}\" \"{self.replica}{destination_dir[1]}\" /T /E /H /C /I')
+                self.logs(f'CREATED "{source_dir_name}" directory')
 
         for source_filename, source_file in source_files.items():
             if source_filename not in replica_files:
                 destination_file = source_file.replace(source_filename, '').split(self.source)
                 os.system(f'xcopy \"{source_file}\" \"{self.replica}{destination_file[1]}\" /I /F')
+                self.logs(f'CREATED "{source_filename}" file')
             else:
                 if self.check_files(source_file, replica_files[source_filename]):
                     pass
@@ -83,16 +89,18 @@ class SyncronizeFolders:
                     destination_file = source_file.replace(source_filename, '').split(self.source)
                     os.remove(replica_files[source_filename])
                     os.system(f'xcopy \"{source_file}\" \"{self.replica}{destination_file[1]}\" /I /F')
-                    print(f'Changed content of - {source_filename}')
+                    self.logs(f'UPDATED "{source_filename}" file')
         
         for replica_dir_name, replica_dir in replica_dirs.items():
             if not replica_dir_name in source_dirs:
                 shutil.rmtree(replica_dir)
+                self.logs(f'REMOVED "{replica_dir_name}" directory')
                 return self.syncronize()
         
         for replica_filename, replica_file in replica_files.items():
             if not replica_filename in source_files:
                 os.remove(replica_file)
+                self.logs(f'REMOVED "{replica_filename}" file')
 
     #Main loop
     def main(self):
