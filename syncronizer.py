@@ -1,3 +1,4 @@
+import argparse
 import hashlib
 import shutil
 import time
@@ -5,13 +6,15 @@ import os
 
 class SyncronizeFolders:
        
-    def __init__(self, source_folder, destination_folder):
+    def __init__(self, source_folder, destination_folder, log_file, interval):
         self.source = source_folder
         self.replica = destination_folder
+        self.log = log_file
+        self.interval = interval
 
     def logs(self, message):
         now = time.strftime("%d-%m-%Y %H:%M:%S", time.localtime())
-        with open("log.txt", "a") as log_file:
+        with open(self.log, "a") as log_file:
             log_file.write(f'[{now}] - {message} \n')
         print(f'[{now}] - {message}')
 
@@ -106,15 +109,20 @@ class SyncronizeFolders:
     def main(self):
         while True:
             if self.check_main_folders():
-                time.sleep(5)
+                time.sleep(self.interval*60)
                 continue
             else:
                 self.syncronize()
 
 
 if __name__ == "__main__":
-    source = input("Enter source folder url: ")
-    replica = input("Enter replica folder url: ")
+    args = argparse.ArgumentParser()
+    args.add_argument('-s', '--source', type=str, help='Url to source folder.')
+    args.add_argument('-r', '--replica', type=str, help='Url to replica folder.')
+    args.add_argument('-l', '--log', type=str, help='Url to log file.')
+    args.add_argument('-i', '--interval', type=int, help='Time of interval (In minutes).')
 
-    sync = SyncronizeFolders(source, replica)
+    arguments = args.parse_args()
+
+    sync = SyncronizeFolders(arguments.source, arguments.replica, arguments.log, arguments.interval)
     sync.main()
