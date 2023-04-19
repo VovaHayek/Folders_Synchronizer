@@ -3,9 +3,11 @@
 How to run the program:
 
   Linux/Mac:
+  
     python3 synchronizer.py [-h]  [-s SOURCE] [-r REPLICA] [-l LOG] [-i INTERVAL]
     
   Windows:
+  
     python synchronizer.py [-h]  [-s SOURCE] [-r REPLICA] [-l LOG] [-i INTERVAL]
     
     
