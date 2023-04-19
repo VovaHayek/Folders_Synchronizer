@@ -19,15 +19,15 @@ class SynchronizeFolders:
             log_file.write(f'[{now}] - {message} \n')
         print(f'[{now}] - {message}')
 
-    def check_files(self, source_file, replica_file):
+    def is_files_content_different(self, source_file, replica_file):
         """Checking if content of both files is the same or not"""
         if os.path.isfile(source_file):
             with open(source_file, 'rb') as source_f:
                 with open(replica_file, 'rb') as replica_f:
                     if hashlib.md5(source_f.read()).hexdigest() == hashlib.md5(replica_f.read()).hexdigest():
-                        return True
-                    return False
-        return True
+                        return False
+                    return True
+        return False
     
     def get_all_files(self):
         """Getting all the files/dirs from source and replica folders and appending them to a dictionaries"""
@@ -51,25 +51,23 @@ class SynchronizeFolders:
 
         return source_files, source_dirs, replica_files, replica_dirs
 
-    def check_main_folders(self):
+    def is_folders_content_different(self):
         """Checking if files and dirs are the same in replica folder and in source folder"""
         source_files, source_dirs, replica_files, replica_dirs = self.get_all_files()
 
         if len(source_files) != len(replica_files) or len(source_dirs) != len(replica_dirs):
-            return False
+            return True
 
         for source_dir in source_dirs:
             if not source_dir in replica_dirs:
-                return False
+                return True
 
         for source_file, source_root in source_files.items():
-            if source_file in replica_files:
-                if not self.check_files(source_root, replica_files[source_file]):
-                    return False
-            else:
-                return False
-        else:
-            return True
+            if not source_file in replica_files:
+                return True
+            if self.is_files_content_different(source_root, replica_files[source_file]):
+                return True
+        return False
 
     def synchronize(self):
         """Updating replica folder if files/dirs are not the same in both folders"""
@@ -86,14 +84,13 @@ class SynchronizeFolders:
                 destination_file = source_file.replace(source_filename, '').split(self.source)
                 os.system(f'xcopy \"{source_file}\" \"{self.replica}{destination_file[1]}\" /I /F')
                 self.logs(f'CREATED "{source_filename}" file')
-            else:
-                if self.check_files(source_file, replica_files[source_filename]):
-                    pass
-                else:
-                    destination_file = source_file.replace(source_filename, '').split(self.source)
-                    os.remove(replica_files[source_filename])
-                    os.system(f'xcopy \"{source_file}\" \"{self.replica}{destination_file[1]}\" /I /F')
-                    self.logs(f'UPDATED "{source_filename}" file')
+                continue
+
+            if self.is_files_content_different(source_file, replica_files[source_filename]):
+                destination_file = source_file.replace(source_filename, '').split(self.source)
+                os.remove(replica_files[source_filename])
+                os.system(f'xcopy \"{source_file}\" \"{self.replica}{destination_file[1]}\" /I /F')
+                self.logs(f'UPDATED "{source_filename}" file')
         
         for replica_dir_name, replica_dir in replica_dirs.items():
             if not replica_dir_name in source_dirs:
@@ -109,11 +106,9 @@ class SynchronizeFolders:
     #Main loop
     def main(self):
         while True:
-            if self.check_main_folders():
-                time.sleep(self.interval*60)
-                continue
-            else:
+            if self.is_folders_content_different():
                 self.synchronize()
+            time.sleep(self.interval)
 
 
 if __name__ == "__main__":
