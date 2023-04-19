@@ -1,9 +1,0 @@
-[18-04-2023 23^23:32] - COPIED "some folder" directory 
-[18-04-2023 23^23:42] - COPIED "style.css" file 
-[18-04-2023 23^23:57] - REMOVED "style.css" file 
-[18-04-2023 23^23:57] - CREATED updated "style.css" file 
-[19-04-2023 01:19:47] - CREATED "folder" directory 
-[19-04-2023 01:19:47] - REMOVED "some folder" directory 
-[19-04-2023 01:19:47] - CREATED "style.css" file 
-[19-04-2023 01:20:57] - REMOVED "folder" directory 
-[19-04-2023 01:43:33] - CREATED "adfadf.txt" file 

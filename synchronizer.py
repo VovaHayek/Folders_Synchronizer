@@ -4,7 +4,7 @@ import shutil
 import time
 import os
 
-class SyncronizeFolders:
+class SynchronizeFolders:
        
     def __init__(self, source_folder, destination_folder, log_file, interval):
         self.source = source_folder
@@ -13,6 +13,7 @@ class SyncronizeFolders:
         self.interval = interval
 
     def logs(self, message):
+        """Logging actions into log file and displaying them into the command line"""
         now = time.strftime("%d-%m-%Y %H:%M:%S", time.localtime())
         with open(self.log, "a") as log_file:
             log_file.write(f'[{now}] - {message} \n')
@@ -70,7 +71,7 @@ class SyncronizeFolders:
         else:
             return True
 
-    def syncronize(self):
+    def synchronize(self):
         """Updating replica folder if files/dirs are not the same in both folders"""
         source_files, source_dirs, replica_files, replica_dirs = self.get_all_files()
 
@@ -98,7 +99,7 @@ class SyncronizeFolders:
             if not replica_dir_name in source_dirs:
                 shutil.rmtree(replica_dir)
                 self.logs(f'REMOVED "{replica_dir_name}" directory')
-                return self.syncronize()
+                return self.synchronize()
         
         for replica_filename, replica_file in replica_files.items():
             if not replica_filename in source_files:
@@ -112,7 +113,7 @@ class SyncronizeFolders:
                 time.sleep(self.interval*60)
                 continue
             else:
-                self.syncronize()
+                self.synchronize()
 
 
 if __name__ == "__main__":
@@ -124,5 +125,5 @@ if __name__ == "__main__":
 
     arguments = args.parse_args()
 
-    sync = SyncronizeFolders(arguments.source, arguments.replica, arguments.log, arguments.interval)
+    sync = SynchronizeFolders(arguments.source, arguments.replica, arguments.log, arguments.interval)
     sync.main()
